@@ -207,6 +207,14 @@ class HTML_WP_Admin_UI {
                         </div>
                         
                         <div class="card">
+                            <h3>Advanced Options</h3>
+                            <p><strong>Image Processing:</strong> External images will be downloaded and converted to WordPress attachments for better performance and reliability.</p>
+                            <p><strong>Form Conversion:</strong> HTML forms can be converted to Contact Form 7 forms for better WordPress integration.</p>
+                            <p><strong>Background Processing:</strong> Large ZIP files can be processed in the background to avoid timeout issues.</p>
+                            <p><strong>Note:</strong> These features are optional and can be enabled in the import options above.</p>
+                        </div>
+                        
+                        <div class="card">
                             <h3>ZIP Archive Requirements</h3>
                             <ul>
                                 <li>ZIP file should contain HTML files (.html or .htm)</li>

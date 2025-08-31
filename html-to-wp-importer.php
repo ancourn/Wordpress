@@ -19,10 +19,22 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/admin-ui.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/link-mapper.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/menu-builder.php';
 
+// Enhanced functionality files
+require_once plugin_dir_path( __FILE__ ) . 'includes/media-handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/elementor-image-replacer.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/html-image-replacer.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/form-handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/cf7-integration.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/background-processor.php';
+
 class HTML_To_WP_Importer {
     public function __construct() {
         // Create upload directory on plugin activation
         register_activation_hook(__FILE__, array($this, 'activate'));
+        
+        // Register shortcodes and hooks
+        add_action('init', array($this, 'register_shortcodes'));
+        add_action('init', array($this, 'register_hooks'));
     }
     
     public function activate() {
@@ -32,6 +44,14 @@ class HTML_To_WP_Importer {
         if (!file_exists($asset_dir)) {
             wp_mkdir_p($asset_dir);
         }
+    }
+    
+    public function register_shortcodes() {
+        HTML_WP_Form_Handler::register_shortcodes();
+    }
+    
+    public function register_hooks() {
+        HTML_WP_Background_Processor::register_hooks();
     }
 }
 

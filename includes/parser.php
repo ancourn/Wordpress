@@ -2,18 +2,29 @@
 if ( ! defined( 'ABSPATH' ) ) exit;
 class HTML_WP_Parser {
     private static $imported_pages = [];
+    
     public static function process($file, $use_elementor = false) {
+        // Clear the link mapper at the start of processing
+        require_once plugin_dir_path(__FILE__) . 'link-mapper.php';
+        HTML_WP_Link_Mapper::clear_map();
+        
         $file_type = wp_check_filetype($file['name']);
         $tmp_path  = $file['tmp_name'];
+        
         if ($file_type['ext'] === 'zip') {
             self::process_zip($tmp_path, $use_elementor);
         } elseif ($file_type['ext'] === 'html') {
-            self::process_html(file_get_contents($tmp_path), $use_elementor);
+            self::process_html(file_get_contents($tmp_path), $use_elementor, $file['name']);
         } else {
             wp_die('Unsupported file type. Please upload .html or .zip');
         }
-        // After processing all pages → build menu
-        HTML_WP_Menu::build_menu(self::$imported_pages);
+        
+        // After processing all pages → build menu using new approach
+        require_once plugin_dir_path(__FILE__) . 'menu-builder.php';
+        $pages_map = HTML_WP_Link_Mapper::get_page_map();
+        if (!empty($pages_map)) {
+            HTML_WP_Menu_Builder::create_menu("Imported Site", $pages_map);
+        }
     }
     private static function process_zip($zip_path, $use_elementor = false) {
         $extract_to = wp_upload_dir()['basedir'] . '/html-importer-tmp/';
@@ -26,7 +37,8 @@ class HTML_WP_Parser {
             $html_files = glob($extract_to . '*.html');
             foreach ($html_files as $html_file) {
                 $content = file_get_contents($html_file);
-                self::process_html($content, $use_elementor);
+                $filename = basename($html_file);
+                self::process_html($content, $use_elementor, $filename);
             }
             // Process assets
             HTML_WP_Assets::process($extract_to);
@@ -34,7 +46,7 @@ class HTML_WP_Parser {
             wp_die('Could not unzip file.');
         }
     }
-    private static function process_html($html, $use_elementor = false) {
+    private static function process_html($html, $use_elementor = false, $filename = 'imported-page.html') {
         // Extract title
         preg_match('/<title>(.*?)<\/title>/is', $html, $title_match);
         $title = !empty($title_match[1]) ? sanitize_text_field($title_match[1]) : 'Imported Page';
@@ -70,7 +82,9 @@ class HTML_WP_Parser {
             ]);
         }
         
+        // Add to both old and new tracking systems
         self::$imported_pages[] = $page_id;
+        HTML_WP_Link_Mapper::add_page($filename, $page_id);
     }
     
     private static function cleanup_directory($directory) {

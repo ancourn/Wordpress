@@ -32,16 +32,19 @@ Create a comprehensive WordPress plugin that allows users to upload HTML files o
 - [x] **Modern Admin Interface**: Clean, tabbed interface for single file and ZIP imports
 - [x] **Detailed Results**: Comprehensive import results with edit and view links
 - [x] **Error Handling**: Robust error handling and user feedback
+- [x] **Enhanced Menu System**: Filename-based menu building with improved structure tracking
 
 #### Technical Implementation
-- [x] **Parser Class** (`/includes/parser.php`): HTML parsing and page creation
+- [x] **Parser Class** (`/includes/parser.php`): HTML parsing and page creation with filename tracking
 - [x] **Assets Class** (`/includes/assets.php`): Legacy asset handling
-- [x] **Menu Class** (`/includes/menu.php`): Navigation menu management
+- [x] **Menu Class** (`/includes/menu.php`): Legacy navigation menu management
 - [x] **Elementor Integration** (`/includes/elementor.php`): Elementor API and page creation
 - [x] **Elementor Mapper** (`/includes/elementor-mapper.php`): HTML to Elementor conversion
-- [x] **ZIP Import** (`/includes/zip-import.php`): ZIP archive processing
+- [x] **ZIP Import** (`/includes/zip-import.php`): ZIP archive processing with filename mapping
 - [x] **Asset Handler** (`/includes/asset-handler.php`): Advanced asset management
 - [x] **Admin Interface** (`/includes/admin-ui.php`): Modern tabbed admin interface
+- [x] **Link Mapper** (`/includes/link-mapper.php`): Filename to page_id mapping system
+- [x] **Menu Builder** (`/includes/menu-builder.php`): Enhanced navigation menu creation with filename support
 - [x] **Admin Styling** (`/assets/css/admin.css`): Professional admin styling
 - [x] **Admin JavaScript** (`/assets/js/admin.js`): Interactive admin functionality
 
@@ -86,10 +89,22 @@ html-to-wp-importer/
 ### Key Classes and Methods
 
 #### HTML_WP_Parser
-- `process($file, $use_elementor)` - Main entry point for file processing
-- `process_zip($zip_path, $use_elementor)` - ZIP file extraction and processing
-- `process_html($html, $use_elementor)` - Single HTML file processing
-- `$imported_pages` - Tracks created page IDs for menu generation
+- `process($file, $use_elementor)` - Main entry point for file processing with Link_Mapper integration
+- `process_zip($zip_path, $use_elementor)` - ZIP file extraction and processing with filename tracking
+- `process_html($html, $use_elementor, $filename)` - Single HTML file processing with filename mapping
+- `$imported_pages` - Tracks created page IDs for backward compatibility
+
+#### HTML_WP_Link_Mapper (NEW)
+- `add_page($filename, $page_id)` - Add filename to page_id mapping
+- `get_page_map()` - Get complete filename => page_id mapping
+- `get_page_id($filename)` - Get page_id by filename
+- `clear_map()` - Clear all mappings for fresh imports
+- `get_count()` - Get count of mapped pages
+
+#### HTML_WP_Menu_Builder (NEW)
+- `create_menu($menu_name, $pages_map)` - Create navigation menu from filename-based page mapping
+- Automatically assigns menu to primary theme location
+- Creates menu items with proper WordPress navigation structure
 
 #### HTML_WP_Asset_Handler
 - `process_assets($extract_dir, $html)` - Main asset processing entry point
@@ -103,7 +118,7 @@ html-to-wp-importer/
 - `make_widget($type, $settings)` - Widget creation helper
 
 #### HTML_WP_Zip_Import
-- `import_zip($zip_path, $use_elementor, $parent_page, $create_menu)` - ZIP import entry point
+- `import_zip($zip_path, $use_elementor, $parent_page, $create_menu)` - ZIP import entry point with Link_Mapper integration
 - `extract_page_title($html, $file_path)` - Title extraction logic
 - `create_elementor_page($title, $html, $parent_page)` - Elementor page creation
 - `create_standard_page($title, $html, $parent_page)` - Standard page creation
@@ -145,25 +160,30 @@ html-to-wp-importer/
 ### For ZIP Files
 1. User uploads ZIP archive
 2. Plugin extracts to unique temporary directory
-3. Finds all HTML files (including subdirectories)
-4. Processes each HTML file:
+3. Initializes HTML_WP_Link_Mapper for filename tracking
+4. Finds all HTML files (including subdirectories)
+5. Processes each HTML file:
    - Extracts title from `<title>` tag
    - Extracts body content
    - Processes and copies assets
    - Rewrites asset URLs
    - Creates WordPress page (standard or Elementor)
-5. Creates navigation menu with all pages
-6. Cleans up temporary files
+   - Maps filename to page_id using HTML_WP_Link_Mapper
+6. Creates navigation menu using HTML_WP_Menu_Builder with filename-based mapping
+7. Cleans up temporary files
 
 ### For Single HTML Files
 1. User uploads HTML file
-2. Plugin processes HTML content:
+2. Plugin initializes HTML_WP_Link_Mapper
+3. Processes the HTML content:
    - Extracts title from `<title>` tag
    - Extracts body content
    - Processes any referenced assets
    - Rewrites asset URLs
    - Creates WordPress page (standard or Elementor)
-3. Creates navigation menu with the page
+   - Maps filename to page_id
+4. Creates navigation menu using HTML_WP_Menu_Builder
+5. Menu is named "Imported Site" and assigned to primary theme location
 
 ### Asset Processing
 1. Scans extract directory for asset files
@@ -171,6 +191,13 @@ html-to-wp-importer/
 3. Handles duplicate filenames with directory prefixes
 4. Rewrites URLs in HTML content
 5. Provides asset statistics and information
+
+### Enhanced Menu Building
+1. HTML_WP_Link_Mapper tracks filename => page_id relationships during import
+2. HTML_WP_Menu_Builder creates structured navigation menus
+3. Menu items are created with proper WordPress navigation structure
+4. Menu is automatically assigned to primary theme location when available
+5. Supports both single file and ZIP import scenarios
 
 ## 🐛 Known Issues and Limitations
 

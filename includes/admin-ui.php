@@ -269,6 +269,7 @@ class HTML_WP_Admin_UI {
         
         try {
             // Process the uploaded file using the parser
+            // The parser now handles menu building automatically using the new approach
             $created_pages = HTML_WP_Parser::process($_FILES['html_file'], $use_elementor);
             
             // Set parent page if specified
@@ -281,10 +282,8 @@ class HTML_WP_Admin_UI {
                 }
             }
             
-            // Create navigation menu if requested
-            if ($create_menu && !empty($created_pages)) {
-                HTML_WP_Menu::build_menu($created_pages);
-            }
+            // Note: Menu building is now handled automatically by the parser
+            // using the new HTML_WP_Menu_Builder and HTML_WP_Link_Mapper
             
             wp_redirect(admin_url('admin.php?page=html-importer&import_success=' . count($created_pages)));
             exit;

@@ -59,8 +59,16 @@ class HTML_WP_Admin_UI {
             <?php
             // Display success/error messages
             if (isset($_GET['import_success'])) {
-                $count = intval($_GET['import_success']);
-                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($count . ' pages imported successfully!') . '</p></div>';
+                $success_message = sanitize_text_field($_GET['import_success']);
+                echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($success_message) . '</p></div>';
+                
+                // Check if theme was generated and show preview options
+                if (isset($_GET['theme_generated']) && $_GET['theme_generated'] === '1' && isset($_GET['theme_slug'])) {
+                    $theme_slug = sanitize_text_field($_GET['theme_slug']);
+                    if (class_exists('HTML_WP_Live_Preview') && HTML_WP_Live_Preview::is_preview_available($theme_slug)) {
+                        HTML_WP_Live_Preview::show_preview($theme_slug);
+                    }
+                }
             }
             
             if (isset($_GET['import_error'])) {
@@ -131,6 +139,10 @@ class HTML_WP_Admin_UI {
                                                 <input type="checkbox" name="overwrite_existing" value="1">
                                                 Overwrite existing pages with same title
                                             </label><br>
+                                            <label>
+                                                <input type="checkbox" name="generate_theme" value="1">
+                                                Generate WordPress theme from imported content
+                                            </label><br>
                                             <?php if (HTML_WP_Elementor::is_elementor_active()): ?>
                                             <label>
                                                 <input type="checkbox" name="use_elementor" value="1">
@@ -192,6 +204,10 @@ class HTML_WP_Admin_UI {
                                                 <input type="checkbox" name="overwrite_existing" value="1">
                                                 Overwrite existing pages with same title
                                             </label><br>
+                                            <label>
+                                                <input type="checkbox" name="generate_theme" value="1">
+                                                Generate WordPress theme from imported content
+                                            </label><br>
                                             <?php if (HTML_WP_Elementor::is_elementor_active()): ?>
                                             <label>
                                                 <input type="checkbox" name="use_elementor" value="1">
@@ -214,6 +230,7 @@ class HTML_WP_Admin_UI {
                                 <li>HTML files can be in root directory or subdirectories</li>
                                 <li>Page titles will be extracted from HTML title tags or filenames</li>
                                 <li>Navigation menu will be created automatically (if selected)</li>
+                                <li>WordPress theme will be generated automatically (if selected)</li>
                             </ul>
                         </div>
                     </div>
@@ -266,10 +283,17 @@ class HTML_WP_Admin_UI {
         
         $parent_page = isset($_POST['parent_page']) ? intval($_POST['parent_page']) : 0;
         $create_menu = isset($_POST['create_menu']) && $_POST['create_menu'] == '1';
+        $generate_theme = isset($_POST['generate_theme']) && $_POST['generate_theme'] == '1';
         
         try {
             // Process the uploaded file using the parser
-            $created_pages = HTML_WP_Parser::process($_FILES['html_file'], $use_elementor);
+            $result = HTML_WP_Parser::process($_FILES['html_file'], $use_elementor, $generate_theme);
+            
+            // Extract created pages from result
+            $created_pages = [];
+            if (isset($result['page_id'])) {
+                $created_pages = [$result['page_id']];
+            }
             
             // Set parent page if specified
             if (!empty($created_pages) && $parent_page > 0) {
@@ -286,7 +310,27 @@ class HTML_WP_Admin_UI {
                 HTML_WP_Menu::build_menu($created_pages);
             }
             
-            wp_redirect(admin_url('admin.php?page=html-importer&import_success=' . count($created_pages)));
+            // Build success message
+            $success_message = count($created_pages) . ' pages imported successfully!';
+            if ($generate_theme && isset($result['theme_generated']) && $result['theme_generated']) {
+                $success_message .= ' Theme generated successfully!';
+                if (isset($result['theme_slug'])) {
+                    $success_message .= ' Theme slug: ' . $result['theme_slug'];
+                }
+                
+                // Add theme generation parameters to URL for preview display
+                $redirect_url = admin_url('admin.php?page=html-importer&import_success=' . urlencode($success_message));
+                if (isset($result['theme_generated']) && $result['theme_generated']) {
+                    $redirect_url .= '&theme_generated=1';
+                    if (isset($result['theme_slug'])) {
+                        $redirect_url .= '&theme_slug=' . urlencode($result['theme_slug']);
+                    }
+                }
+                wp_redirect($redirect_url);
+                exit;
+            }
+            
+            wp_redirect(admin_url('admin.php?page=html-importer&import_success=' . urlencode($success_message)));
             exit;
             
         } catch (Exception $e) {
@@ -323,20 +367,44 @@ class HTML_WP_Admin_UI {
         
         $parent_page = isset($_POST['parent_page']) ? intval($_POST['parent_page']) : 0;
         $create_menu = isset($_POST['create_menu']) && $_POST['create_menu'] == '1';
+        $generate_theme = isset($_POST['generate_theme']) && $_POST['generate_theme'] == '1';
         
         try {
             // Process the ZIP file
-            $results = HTML_WP_Zip_Import::import_zip($_FILES['html_zip']['tmp_name'], $use_elementor, $parent_page, $create_menu);
+            $results = HTML_WP_Zip_Import::import_zip($_FILES['html_zip']['tmp_name'], $use_elementor, $parent_page, $create_menu, $generate_theme);
             
             if (is_wp_error($results)) {
                 wp_redirect(admin_url('admin.php?page=html-importer&import_error=' . urlencode($results->get_error_message())));
                 exit;
             }
             
+            // Build success message
+            $page_count = is_array($results) ? count(array_filter($results, function($item) {
+                return isset($item['page_id']);
+            })) : 0;
+            
+            $success_message = $page_count . ' pages imported successfully!';
+            
+            if ($generate_theme && isset($results['theme_generated']) && $results['theme_generated']) {
+                $success_message .= ' Theme generated successfully!';
+                if (isset($results['theme_slug'])) {
+                    $success_message .= ' Theme slug: ' . $results['theme_slug'];
+                }
+            }
+            
             // Store results in transient for display
             set_transient('html_importer_results', $results, 300); // 5 minutes
             
-            wp_redirect(admin_url('admin.php?page=html-importer&zip_import_results=1&import_success=' . count($results)));
+            // Build redirect URL with theme generation parameters
+            $redirect_url = admin_url('admin.php?page=html-importer&zip_import_results=1&import_success=' . urlencode($success_message));
+            if ($generate_theme && isset($results['theme_generated']) && $results['theme_generated']) {
+                $redirect_url .= '&theme_generated=1';
+                if (isset($results['theme_slug'])) {
+                    $redirect_url .= '&theme_slug=' . urlencode($results['theme_slug']);
+                }
+            }
+            
+            wp_redirect($redirect_url);
             exit;
             
         } catch (Exception $e) {
@@ -373,6 +441,13 @@ class HTML_WP_Admin_UI {
                 </tbody>
             </table>
         </div>
+        
+        <?php
+        // Show live preview options if theme was generated
+        if (class_exists('HTML_WP_Live_Preview')) {
+            HTML_WP_Live_Preview::show_import_preview_options($results);
+        }
+        ?>
         <?php
     }
 }

@@ -1,7 +1,13 @@
 <?php
 if ( ! defined( 'ABSPATH' ) ) exit;
+
+// Include required files for new menu system
+require_once plugin_dir_path(__FILE__) . 'link-mapper.php';
+require_once plugin_dir_path(__FILE__) . 'menu-builder.php';
+require_once plugin_dir_path(__FILE__) . 'theme-generator.php';
+
 class HTML_WP_Zip_Import {
-    public static function import_zip($zip_path, $use_elementor = false, $parent_page = 0, $create_menu = true) {
+    public static function import_zip($zip_path, $use_elementor = false, $parent_page = 0, $create_menu = true, $generate_theme = false) {
         $upload_dir = wp_upload_dir();
         $extract_to = $upload_dir['basedir'] . '/html_import_' . time();
         
@@ -35,8 +41,12 @@ class HTML_WP_Zip_Import {
         $results = [];
         $imported_pages = [];
         
+        // Clear the link mapper at the start of processing
+        HTML_WP_Link_Mapper::clear_map();
+        
         foreach ($files as $file) {
             $html = file_get_contents($file);
+            $filename = basename($file);
             
             // Extract title from HTML or use filename
             $page_title = self::extract_page_title($html, $file);
@@ -54,23 +64,41 @@ class HTML_WP_Zip_Import {
             
             if ($post_id && !is_wp_error($post_id)) {
                 $results[] = [
-                    'file' => basename($file),
+                    'file' => $filename,
                     'page_id' => $post_id,
                     'title' => $page_title,
                     'edit_link' => get_edit_post_link($post_id),
                     'view_link' => get_permalink($post_id)
                 ];
                 $imported_pages[] = $post_id;
+                
+                // Add page to the link mapper
+                HTML_WP_Link_Mapper::add_page($filename, $post_id);
             }
         }
         
-        // Create navigation menu if requested
+        // Create navigation menu if requested using new system
         if ($create_menu && !empty($imported_pages)) {
-            HTML_WP_Menu::build_menu($imported_pages);
+            $pages_map = HTML_WP_Link_Mapper::get_page_map();
+            HTML_WP_Menu_Builder::create_menu("Imported Site", $pages_map);
+        }
+        
+        // Generate theme if requested
+        $theme_slug = null;
+        if ($generate_theme && !empty($imported_pages)) {
+            $theme_slug = HTML_WP_Theme_Generator::generate_theme_from_pages($results, $extract_to);
         }
         
         // Clean up temporary directory
         self::cleanup_directory($extract_to);
+        
+        // Add theme information to results
+        if ($theme_slug) {
+            $results['theme_generated'] = true;
+            $results['theme_slug'] = $theme_slug;
+        } else {
+            $results['theme_generated'] = false;
+        }
         
         return $results;
     }

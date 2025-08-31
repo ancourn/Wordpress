@@ -15,6 +15,12 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/assets.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/elementor.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/zip-import.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/asset-handler.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/menu.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/elementor-mapper.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/link-mapper.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/menu-builder.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/theme-generator.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/live-preview.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/admin-ui.php';
 
 class HTML_To_WP_Importer {

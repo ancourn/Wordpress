@@ -79,3 +79,9 @@ debug.log
 
 # Backup Files (keep our backup)
 !html-to-wp-importer-backup-*.tar.gz
+!backup-*.tar.gz
+
+# Project Specific
+html_import_*/
+html_import_temp*/
+*.tmp.html

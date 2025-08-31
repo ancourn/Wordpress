@@ -1,71 +1,140 @@
 # HTML to WordPress Importer
 
-A powerful WordPress plugin that allows users to upload HTML files or ZIP archives and converts them into WordPress Pages with proper asset handling and automatic navigation menu generation.
+A powerful WordPress plugin that allows users to upload HTML files or ZIP archives and converts them into WordPress Pages with proper asset handling, automatic navigation menu generation, and Elementor integration.
 
 ## 🚀 Features
 
+### Core Functionality
 - **Single HTML File Import**: Upload individual HTML files and convert them to WordPress pages
 - **ZIP Archive Import**: Upload ZIP archives containing multiple HTML files for bulk import
-- **Asset Management**: Automatically copies CSS, JS, and image files to the WordPress uploads folder
+- **Asset Management**: Automatically copies CSS, JS, images, and fonts to the WordPress uploads directory
 - **URL Rewriting**: Rewrites all asset links in HTML to point to new WordPress upload paths
 - **Navigation Menu**: Automatically generates navigation menu linking imported pages
-- **Title Extraction**: Automatically extracts page titles from `<title>` tags or generates them if missing
+- **Title Extraction**: Automatically extracts page titles from `<title>` tags or generates defaults
 - **Content Extraction**: Extracts content from `<body>` tags while removing unwanted elements
-- **Multi-Page Support**: Handles complex websites with multiple pages and nested directory structures
-- **Theme Integration**: Automatically assigns imported menu to primary theme location when possible
+
+### Advanced Features
+- **Elementor Integration**: Convert HTML content to editable Elementor blocks and widgets
+- **Smart Asset Handler**: Comprehensive asset management with subdirectory support
+- **Duplicate Prevention**: Intelligent handling of duplicate filenames from different directories
+- **Modern Admin Interface**: Clean, tabbed interface for single file and ZIP imports
+- **Detailed Results**: Comprehensive import results with edit and view links
+- **Error Handling**: Robust error handling and user feedback
+
+### Supported File Types
+- **HTML Files**: `.html`, `.htm`
+- **ZIP Archives**: `.zip` containing HTML files and assets
+- **Asset Types**: CSS, JS, PNG, JPG, JPEG, GIF, SVG, WOFF, WOFF2, TTF, OTF, EOT
 
 ## 📋 Requirements
 
-- WordPress 5.0 or higher
-- PHP 7.0 or higher
-- PHP ZIP extension enabled (for ZIP file support)
-- WordPress file upload permissions
-- MySQL 5.6 or higher
+### System Requirements
+- **WordPress**: 5.0 or higher
+- **PHP**: 7.0 or higher
+- **MySQL**: 5.6 or higher
+- **Memory**: 64MB PHP memory limit (128MB recommended)
+- **Disk Space**: 10MB for plugin + additional space for imported assets
+
+### PHP Extensions
+- **ZipArchive**: For ZIP file processing
+- **DOMDocument**: For HTML parsing
+- **Fileinfo**: For file type detection
+- **JSON**: For WordPress compatibility
+- **MBString**: For string handling
+- **cURL**: For WordPress updates and communication
+
+### Optional Dependencies
+- **Elementor Plugin**: For Elementor block conversion (optional)
+- **GD Library**: For image processing (optional)
+- **Imagick**: For advanced image processing (optional)
 
 ## 🛠️ Installation
 
 ### Method 1: WordPress Admin (Recommended)
 
-1. Download the latest release from the [GitHub repository](https://github.com/ancourn/Wordpress.git)
-2. Go to WordPress Admin → Plugins → Add New
-3. Click "Upload Plugin" and select the downloaded ZIP file
-4. Activate the plugin
-5. Navigate to **HTML Importer** in the WordPress admin menu
+1. **Download the Plugin**
+   ```bash
+   # Download from GitHub
+   wget https://github.com/ancourn/Wordpress/archive/main.zip
+   unzip main.zip
+   ```
+
+2. **Upload to WordPress**
+   - Go to WordPress Admin → Plugins → Add New
+   - Click "Upload Plugin"
+   - Select the plugin ZIP file
+   - Click "Install Now"
+
+3. **Activate the Plugin**
+   - After installation, click "Activate Plugin"
+   - The plugin will appear in the WordPress admin menu
 
 ### Method 2: Manual Installation
 
-1. Clone or download the repository
-2. Upload the `html-to-wp-importer` folder to `/wp-content/plugins/`
-3. Go to WordPress Admin → Plugins
-4. Find "HTML to WordPress Importer" and click "Activate"
+1. **Extract the Plugin**
+   ```bash
+   unzip html-to-wp-importer.zip
+   ```
 
-### Method 3: Composer (For Development)
+2. **Upload via FTP/SFTP**
+   ```bash
+   # Upload to WordPress plugins directory
+   scp -r html-to-wp-importer/ user@server:/path/to/wp-content/plugins/
+   ```
 
+3. **Activate in WordPress**
+   - Go to WordPress Admin → Plugins
+   - Find "HTML to WordPress Importer"
+   - Click "Activate"
+
+### Method 3: Command Line (WP-CLI)
 ```bash
-composer require ancourn/html-to-wp-importer
+# Install plugin via WP-CLI
+wp plugin install /path/to/html-to-wp-importer.zip --activate
+
+# Or if already uploaded
+wp plugin activate html-to-wp-importer
 ```
 
 ## 🎯 Usage
 
 ### Basic Import
 
-1. Go to WordPress Admin → **HTML Importer**
-2. Click "Choose File" or drag and drop your HTML file or ZIP archive
-3. Select the file type (HTML or ZIP)
-4. Click "Upload & Import"
+1. **Access the Plugin**
+   - Go to WordPress Admin → **HTML Importer**
+   - You'll see the main import interface with two tabs
 
-### Supported File Types
+2. **Single File Import**
+   - Click the "Single File" tab
+   - Upload an HTML file
+   - Configure options (parent page, menu creation, Elementor conversion)
+   - Click "Upload & Import"
 
-- **HTML Files**: `.html`, `.htm`
-- **ZIP Archives**: `.zip` containing HTML files and assets
+3. **ZIP Archive Import**
+   - Click the "ZIP Archive" tab
+   - Upload a ZIP file containing HTML files and assets
+   - Configure options
+   - Click "Upload & Import ZIP"
 
 ### Advanced Options
 
-The plugin provides several configuration options:
+#### Parent Page Selection
+- Choose a parent page if you want imported pages to be children
+- Pages will be nested under the selected parent
 
-- **Parent Page**: Select a parent page if you want imported pages to be children
-- **Create Navigation Menu**: Automatically create a menu with imported pages (enabled by default)
-- **Overwrite Existing**: Replace existing pages with the same title (disabled by default)
+#### Navigation Menu Creation
+- Automatically creates a navigation menu with all imported pages
+- Menu is assigned to the primary theme location when possible
+- Can be disabled if not needed
+
+#### Elementor Integration
+- Convert HTML content to editable Elementor blocks
+- Only available when Elementor plugin is active
+- Creates fully editable Elementor pages instead of standard WordPress pages
+
+#### Overwrite Existing Pages
+- Replace existing pages with the same title
+- Useful for updating previously imported content
 
 ## 📁 Project Structure
 
@@ -73,50 +142,55 @@ The plugin provides several configuration options:
 html-to-wp-importer/
 ├── html-to-wp-importer.php       # Main plugin bootstrap
 ├── includes/
-│   ├── menu.php                  # Navigation menu management
-│   ├── assets.php                 # Asset handling and URL rewriting
-│   └── parser.php                 # HTML parsing and page creation
+│   ├── parser.php               # HTML parsing and page creation
+│   ├── assets.php               # Legacy asset handling
+│   ├── elementor.php            # Elementor integration
+│   ├── elementor-mapper.php     # HTML to Elementor conversion
+│   ├── zip-import.php           # ZIP archive processing
+│   ├── asset-handler.php       # Advanced asset management
+│   ├── menu.php                # Navigation menu management
+│   └── admin-ui.php            # Modern admin interface
 ├── admin/
-│   └── uploader.php             # Admin upload form and processing
+│   └── uploader.php            # Legacy admin upload form
 ├── assets/
-│   ├── css/
-│   │   └── admin.css            # Admin interface styles
-│   └── js/
-│       └── admin.js              # Admin interface JavaScript
+│   ├── css/admin.css            # Admin styling
+│   └── js/admin.js              # Admin JavaScript
+├── docs/
+│   ├── DEPENDENCIES.md          # System requirements and technical specs
+│   └── SETUP.md                 # Installation and configuration guide
 ├── .gitignore                    # Git ignore rules
 ├── README.md                     # This file
-└── PROJECT_MANIFEST.md          # Project documentation
+├── PROJECT_MANIFEST.md          # Project status and development roadmap
+├── GITHUB_SETUP_SUMMARY.md     # GitHub setup details
+└── LICENSE                      # GPL v2 license
 ```
 
 ## 🔧 How It Works
 
 ### For ZIP Files
-
 1. **Upload**: User uploads ZIP archive
 2. **Extract**: Plugin extracts to unique temporary directory
 3. **Process**: Finds and processes all HTML files (including subdirectories)
-4. **Assets**: Copies all assets (CSS, JS, images) to uploads directory
+4. **Assets**: Copies all assets (CSS, JS, images, fonts) to uploads directory
 5. **Rewrite**: Rewrites all asset URLs in HTML content to point to new locations
 6. **Pages**: Creates WordPress pages for each HTML file
 7. **Menu**: Creates navigation menu with all imported pages
 8. **Cleanup**: Removes temporary files
 
 ### For Single HTML Files
-
 1. **Upload**: User uploads single HTML file
 2. **Process**: Processes the HTML content directly
-3. **Rewrite**: Rewrites asset URLs to point to uploads directory
-4. **Page**: Creates single WordPress page
-5. **Menu**: Creates navigation menu with the imported page
+3. **Assets**: Handles any assets referenced in the HTML
+4. **Rewrite**: Rewrites asset URLs to point to uploads directory
+5. **Page**: Creates single WordPress page
+6. **Menu**: Creates navigation menu with the imported page
 
 ### Asset URL Rewriting
-
 The plugin automatically rewrites the following asset URLs:
-
-- **Images**: `<img src="image.jpg">` → `<img src="/wp-content/uploads/html-importer-assets/image.jpg">`
-- **CSS**: `<link href="style.css">` → `<link href="/wp-content/uploads/html-importer-assets/style.css">`
-- **JavaScript**: `<script src="script.js">` → `<script src="/wp-content/uploads/html-importer-assets/script.js">`
-- **Background Images**: `background-image: url("bg.jpg")` → `background-image: url("/wp-content/uploads/html-importer-assets/bg.jpg")`
+- **Images**: `<img src="image.jpg">` → `<img src="/wp-content/uploads/html_import_assets/image.jpg">`
+- **CSS**: `<link href="style.css">` → `<link href="/wp-content/uploads/html_import_assets/style.css">`
+- **JavaScript**: `<script src="script.js">` → `<script src="/wp-content/uploads/html_import_assets/script.js">`
+- **Background Images**: `background-image: url("bg.jpg")` → `background-image: url("/wp-content/uploads/html_import_assets/bg.jpg")`
 
 ## 🛡️ Security Features
 
@@ -126,6 +200,7 @@ The plugin automatically rewrites the following asset URLs:
 - **Sanitization**: Proper sanitization of all input and output
 - **Capability Checks**: Ensures only authorized users can import files
 - **Path Validation**: Prevents directory traversal attacks
+- **Content Filtering**: Removal of potentially harmful content
 
 ## 🔍 Troubleshooting
 
@@ -146,14 +221,12 @@ The plugin automatically rewrites the following asset URLs:
 - Ensure the uploads directory is writable
 - Verify disk space is available
 
-**"Page with title already exists"**
-- Enable the "Overwrite existing pages" option
-- Or rename the title in your HTML file before importing
+**"Elementor plugin is not active"**
+- Install and activate the Elementor plugin
+- The Elementor option will only appear when Elementor is active
 
 ### Debug Mode
-
 To enable debug mode, add this to your `wp-config.php`:
-
 ```php
 define('WP_DEBUG', true);
 define('WP_DEBUG_LOG', true);
@@ -170,6 +243,7 @@ The plugin has been tested with:
 - Various themes (Twenty Series, Astra, OceanWP, etc.)
 - Complex HTML structures with nested assets
 - Large ZIP archives (up to 50MB)
+- Elementor Free and Pro versions
 
 ## 📊 Performance
 
@@ -180,14 +254,22 @@ The plugin has been tested with:
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+1. **Fork the Repository**
+2. **Create Feature Branch**
+   ```bash
+   git checkout -b feature/amazing-feature
+   ```
+3. **Commit Your Changes**
+   ```bash
+   git commit -m 'Add some amazing feature'
+   ```
+4. **Push to Branch**
+   ```bash
+   git push origin feature/amazing-feature
+   ```
+5. **Open Pull Request**
 
-### Development Setup
-
+### Development Environment Setup
 ```bash
 # Clone the repository
 git clone https://github.com/ancourn/Wordpress.git
@@ -207,6 +289,7 @@ This plugin is licensed under the GPL v2 or later. See [LICENSE](LICENSE) file f
 ## 🙏 Acknowledgments
 
 - WordPress core team for the excellent CMS platform
+- Elementor team for the powerful page builder
 - Contributors who have helped improve this plugin
 - The WordPress community for feedback and support
 
@@ -226,8 +309,11 @@ For support and feature requests:
 - Asset management and URL rewriting
 - Navigation menu generation
 - Admin interface with file upload
+- Elementor integration
+- Advanced asset handler
+- Modern tabbed admin interface
 - Comprehensive error handling
 
 ---
 
-**Note**: A backup snapshot was created before pushing to GitHub: `html-to-wp-importer-backup-20250831-090542.tar.gz`
+**Note**: A backup snapshot was created before pushing to GitHub: `backup-before-github-push.tar.gz`

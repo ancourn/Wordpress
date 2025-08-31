@@ -53,15 +53,40 @@ class HTML_WP_Zip_Import {
             }
             
             if ($post_id && !is_wp_error($post_id)) {
+                // Register page with link mapper
+                require_once plugin_dir_path(__FILE__) . 'link-mapper.php';
+                HTML_WP_Link_Mapper::register_page(basename($file), $post_id);
+                
+                // Store original HTML for link rewriting
+                $original_html = $html;
+                
                 $results[] = [
                     'file' => basename($file),
                     'page_id' => $post_id,
                     'title' => $page_title,
                     'edit_link' => get_edit_post_link($post_id),
-                    'view_link' => get_permalink($post_id)
+                    'view_link' => get_permalink($post_id),
+                    'original_html' => $original_html
                 ];
                 $imported_pages[] = $post_id;
             }
+        }
+        
+        // Rewrite internal links after all pages are created
+        if (!empty($imported_pages)) {
+            foreach ($results as &$result) {
+                $updated_html = HTML_WP_Link_Mapper::rewrite_links($result['original_html']);
+                
+                // Update the page content with rewritten links
+                wp_update_post([
+                    'ID' => $result['page_id'],
+                    'post_content' => $updated_html
+                ]);
+                
+                // Update the stored HTML
+                $result['html'] = $updated_html;
+            }
+            unset($result); // Remove reference
         }
         
         // Create navigation menu if requested

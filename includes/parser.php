@@ -70,6 +70,13 @@ class HTML_WP_Parser {
             ]);
         }
         
+        // Register the page for link mapping (for potential future multi-file imports)
+        if ($page_id && !is_wp_error($page_id)) {
+            require_once plugin_dir_path(__FILE__) . 'link-mapper.php';
+            // Use a generic filename for single file imports
+            HTML_WP_Link_Mapper::register_page('imported-page-' . $page_id . '.html', $page_id);
+        }
+        
         self::$imported_pages[] = $page_id;
     }
     
